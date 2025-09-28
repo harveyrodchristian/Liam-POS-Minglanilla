@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sari-Sari Store POS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .pos-container {
+            display: flex;
+            gap: 20px;
+        }
+        .products {
+            flex: 1;
+        }
+        .cart {
+            flex: 1;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .category-tab {
+            background: #e0e0e0;
+            padding: 5px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .category-tab.active {
+            background: #3498db;
+            color: white;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .product-item {
+            background: #3498db;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 0.9em;
+        }
+        .product-item:hover {
+            background: #2980b9;
+        }
+        .cart-items {
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .cart-item-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .cart-item-controls button {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-item-controls button:hover {
+            background: #c0392b;
+        }
+        .cart-total {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-top: 15px;
+            text-align: right;
+        }
+        button {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+        button:hover {
+            background: #27ae60;
+        }
+        .receipt {
+            background: white;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px dashed #ccc;
+            display: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .modal input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1.1em;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-buttons button {
+            flex: 1;
+            margin-top: 0;
+        }
+        .sales-record {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .sales-record h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .record-item {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+        }
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .record-details {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .change-display {
+            background: #2ecc71;
+            color: white;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            .receipt, .receipt * {
+                visibility: visible;
+            }
+            .receipt {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SARISARI STORE POS</h1>
+        
+        <div class="pos-container">
+            <div class="products">
+                <h2>Products</h2>
+                <div class="category-tabs" id="categoryTabs">
+                    <!-- Categories will be added by JavaScript -->
+                </div>
+                <div class="product-grid" id="productGrid">
+                    <!-- Products will be added by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="cart">
+                <h2>Cart</h2>
+                <div class="cart-items" id="cartItems">
+                    <!-- Cart items will appear here -->
+                </div>
+                <div class="cart-total" id="cartTotal">
+                    Total: ₱0.00
+                </div>
+                <button id="checkoutBtn">Checkout</button>
+                <button id="printBtn">Print Receipt</button>
+                <button id="clearCartBtn">Clear Cart</button>
+                <button id="viewRecordsBtn">View Sales Records</button>
+                <button id="exportRecords">Export Sales Data</button>
+            </div>
+        </div>
+        
+        <div class="receipt" id="receipt">
+            <h2 style="text-align: center;">SARISARI STORE</h2>
+            <p style="text-align: center;">123 Main Street, Barangay 1</p>
+            <p style="text-align: center;">Tel: 0912-345-6789</p>
+            <hr>
+            <div id="receiptDate" style="text-align: center; margin-bottom: 10px;"></div>
+            <div id="receiptContent"></div>
+            <hr>
+            <div id="receiptTotal" style="font-weight: bold; text-align: right; margin-top: 10px;"></div>
+            <p style="text-align: center; margin-top: 20px;">Thank you for shopping!</p>
+        </div>
+
+        <!-- Payment Modal -->
+        <div id="paymentModal" class="modal">
+            <div class="modal-content">
+                <h3>Process Payment</h3>
+                <div>
+                    <label>Total Amount: </label>
+                    <span id="modalTotal" style="font-weight: bold; font-size: 1.2em;"></span>
+                </div>
+                <input type="number" id="amountPaid" placeholder="Enter amount paid" step="0.01" min="0">
+                <div id="changeDisplay" class="change-display" style="display: none;">
+                    Change: ₱<span id="changeAmount">0.00</span>
+                </div>
+                <div class="modal-buttons">
+                    <button id="cancelPayment" style="background: #e74c3c;">Cancel</button>
+                    <button id="confirmPayment">Complete Sale</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sales Records Modal -->
+        <div id="recordsModal" class="modal">
+            <div class="modal-content" style="width: 600px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Sales Records</h3>
+                    <button id="closeRecords" style="width: auto; padding: 5px 15px; margin: 0; background: #e74c3c;">Close</button>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button id="clearRecords" style="background: #e74c3c; margin: 0;">Clear All Records</button>
+                    <div id="totalSales" style="flex: 1; text-align: right; font-weight: bold; padding: 10px;"></div>
+                </div>
+                <div id="salesRecordsList" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Sales records will appear here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // All your products with categories
+        const products = [
+            { id: 1, name: "baygon catol", price: 5, category: "Household" },
+            { id: 2, name: "nova/piatos", price: 20, category: "Snacks" },
+            { id: 3, name: "oishi", price: 9, category: "Snacks" },
+            { id: 4, name: "happy", price: 2, category: "Snacks" },
+            { id: 5, name: "lucky me canton", price: 15, category: "Noodles" },
+            { id: 6, name: "lucky me noodles beef/chicken", price: 13, category: "Noodles" },
+            { id: 7, name: "silver swan tuyo small pouch", price: 9, category: "Grocery" },
+            { id: 8, name: "silver swan tuyo big pouch", price: 12, category: "Grocery" },
+            { id: 9, name: "silver swan suka pouch", price: 10, category: "Grocery" },
+            { id: 10, name: "mantika", price: 50, category: "Grocery" },
+            { id: 11, name: "egg", price: 10, category: "Grocery" },
+            { id: 12, name: "bihon", price: 25, category: "Noodles" },
+            { id: 13, name: "family sardines green/red", price: 28, category: "Canned Goods" },
+            { id: 14, name: "century tuna", price: 40, category: "Canned Goods" },
+            { id: 15, name: "beef loaf", price: 30, category: "Canned Goods" },
+            { id: 16, name: "corned beef holiday", price: 45, category: "Canned Goods" },
+            { id: 17, name: "magic sarap", price: 5, category: "Seasoning" },
+            { id: 18, name: "ginisa mix", price: 5, category: "Seasoning" },
+            { id: 19, name: "vitsin ajinomoto", price: 5, category: "Seasoning" },
+            { id: 20, name: "pepper", price: 10, category: "Seasoning" },
+            { id: 21, name: "knorr cubes", price: 10, category: "Seasoning" },
+            { id: 22, name: "knorr sinigang", price: 18, category: "Seasoning" },
+            { id: 23, name: "mix laurel leaves", price: 30, category: "Seasoning" },
+            { id: 24, name: "asuetes", price: 5, category: "Seasoning" },
+            { id: 25, name: "brown sugar", price: 25, category: "Grocery" },
+            { id: 26, name: "refined sugar white", price: 30, category: "Grocery" },
+            { id: 27, name: "salt", price: 5, category: "Grocery" },
+            { id: 28, name: "corn starch small", price: 3, category: "Grocery" },
+            { id: 29, name: "corn starch big", price: 5, category: "Grocery" },
+            { id: 30, name: "bombay whole", price: 12, category: "Grocery" },
+            { id: 31, name: "ahos whole", price: 12, category: "Grocery" },
+            { id: 32, name: "cup noodles", price: 30, category: "Noodles" },
+            { id: 33, name: "spaghetti sauce", price: 48, category: "Pasta" },
+            { id: 34, name: "tomato sauce", price: 30, category: "Pasta" },
+            { id: 35, name: "tomato paste", price: 25, category: "Pasta" },
+            { id: 36, name: "catsup", price: 16, category: "Condiments" },
+            { id: 37, name: "kopico twin brown", price: 15, category: "Beverages" },
+            { id: 38, name: "kopico twin blanka", price: 15, category: "Beverages" },
+            { id: 39, name: "kopico twin black", price: 15, category: "Beverages" },
+            { id: 40, name: "nescafe stick", price: 5, category: "Beverages" },
+            { id: 41, name: "nescafe creamy white", price: 16, category: "Beverages" },
+            { id: 42, name: "nescafe creamy latte", price: 16, category: "Beverages" },
+            { id: 43, name: "energen", price: 10, category: "Beverages" },
+            { id: 44, name: "milo", price: 12, category: "Beverages" },
+            { id: 45, name: "bear brand swak", price: 13, category: "Beverages" },
+            { id: 46, name: "tang juice orange/pineapple", price: 25, category: "Beverages" },
+            { id: 47, name: "nestea juice apple", price: 25, category: "Beverages" },
+            { id: 48, name: "condensed milk big", price: 52, category: "Dairy" },
+            { id: 49, name: "condensed milk small", price: 46, category: "Dairy" },
+            { id: 50, name: "angel evaporada", price: 45, category: "Dairy" },
+            { id: 51, name: "green peas", price: 16, category: "Canned Goods" },
+            { id: 52, name: "pineapple tidbits", price: 30, category: "Canned Goods" },
+            { id: 53, name: "star margarine", price: 35, category: "Dairy" },
+            { id: 54, name: "colgate", price: 8, category: "Toiletries" },
+            { id: 55, name: "close up", price: 8, category: "Toiletries" },
+            { id: 56, name: "ariel powder twin pack", price: 18, category: "Household" },
+            { id: 57, name: "surf powder", price: 10, category: "Household" },
+            { id: 58, name: "wings powder", price: 10, category: "Household" },
+            { id: 59, name: "oyster sauce", price: 10, category: "Condiments" },
+            { id: 60, name: "tide bar", price: 18, category: "Household" },
+            { id: 61, name: "downy", price: 11, category: "Household" },
+            { id: 62, name: "joy", price: 9, category: "Household" },
+            { id: 63, name: "smart dishwashing liquid small", price: 15, category: "Household" },
+            { id: 64, name: "smart dishwashing liquid big", price: 30, category: "Household" },
+            { id: 65, name: "zonrox small", price: 15, category: "Household" },
+            { id: 66, name: "zonrox big", price: 20, category: "Household" },
+            { id: 67, name: "cheese", price: 23, category: "Dairy" },
+            { id: 68, name: "panteen shampoo", price: 9, category: "Toiletries" },
+            { id: 69, name: "sunsilk shampoo", price: 9, category: "Toiletries" },
+            { id: 70, name: "dove shampoo", price: 9, category: "Toiletries" },
+            { id: 71, name: "palmolive shampoo", price: 9, category: "Toiletries" },
+            { id: 72, name: "head and shoulders", price: 9, category: "Toiletries" },
+            { id: 73, name: "safeguard small", price: 25, category: "Toiletries" },
+            { id: 74, name: "safeguard big", price: 30, category: "Toiletries" },
+            { id: 75, name: "toothbrush", price: 35, category: "Toiletries" },
+            { id: 76, name: "modess", price: 9, category: "Toiletries" },
+            { id: 77, name: "sisters sanitary napkin", price: 9, category: "Toiletries" },
+            { id: 78, name: "cotton buds", price: 8, category: "Toiletries" },
+            { id: 79, name: "wipes", price: 22, category: "Toiletries" },
+            { id: 80, name: "cotton small", price: 15, category: "Toiletries" },
+            { id: 81, name: "cotton big", price: 25, category: "Toiletries" },
+            { id: 82, name: "skyflakes biscuits", price: 9, category: "Snacks" },
+            { id: 83, name: "fita", price: 9, category: "Snacks" },
+            { id: 84, name: "rebisco", price: 9, category: "Snacks" },
+            { id: 85, name: "hansel", price: 9, category: "Snacks" },
+            { id: 86, name: "cheese cake", price: 11, category: "Snacks" },
+            { id: 87, name: "candy/lollipop", price: 2, category: "Snacks" },
+            { id: 88, name: "mineral water 500ml", price: 20, category: "Beverages" },
+            { id: 89, name: "coke sakto", price: 15, category: "Beverages" },
+            { id: 90, name: "coke mismo", price: 20, category: "Beverages" },
+            { id: 91, name: "coke/sprite/orange litro", price: 44, category: "Beverages" },
+            { id: 92, name: "sting/cobra", price: 25, category: "Beverages" },
+            { id: 93, name: "c2", price: 15, category: "Beverages" },
+            { id: 94, name: "yakult", price: 16, category: "Beverages" },
+            { id: 95, name: "jelly c", price: 8, category: "Snacks" },
+            { id: 96, name: "redhorse litro", price: 140, category: "Alcohol" },
+            { id: 97, name: "marlboro blast", price: 10, category: "Tobacco" },
+            { id: 98, name: "marlboro red", price: 10, category: "Tobacco" },
+            { id: 99, name: "winston", price: 10, category: "Tobacco" },
+            { id: 100, name: "mighty puti", price: 9, category: "Tobacco" },
+            { id: 101, name: "misua", price: 4, category: "Noodles" },
+            { id: 102, name: "odong", price: 4, category: "Noodles" },
+            { id: 103, name: "butane", price: 30, category: "Hou" },
+            { id: 104, name: "stick o", price: 2, category: "Snacks" },
+            { id: 105, name: "eden mayonnaise", price: 45, category: "Condiments" },
+            { id: 106, name: "ladys choice mayonnaise", price: 45, category: "Condiments" },
+            { id: 107, name: "colgate charcoal", price: 12, category: "Toiletries" },
+            { id: 108, name: "gsm mojito", price: 170, category: "Alcohol" },
+            { id: 109, name: "coke/sprite/orange 1.5", price: 75, category: "Beverages" },
+            { id: 110, name: "perla soap", price: 23, category: "Toiletries" }
+        ];
+
+        let cart = [];
+        let currentCategory = "All";
+        let salesRecords = []; // Store sales records in memory
+
+        // Get unique categories
+        const categories = ["All", ...new Set(products.map(product => product.category))];
+
+        // Display category tabs
+        const categoryTabs = document.getElementById('categoryTabs');
+        categories.forEach(category => {
+            const tab = document.createElement('div');
+            tab.className = 'category-tab';
+            tab.textContent = category;
+            if (category === "All") tab.classList.add('active');
+            tab.addEventListener('click', () => filterByCategory(category));
+            categoryTabs.appendChild(tab);
+        });
+
+        // Display products
+        function displayProducts() {
+            const productGrid = document.getElementById('productGrid');
+            productGrid.innerHTML = '';
+            
+            const filteredProducts = currentCategory === "All" 
+                ? products 
+                : products.filter(product => product.category === currentCategory);
+            
+            filteredProducts.forEach(product => {
+                const productElement = document.createElement('div');
+                productElement.className = 'product-item';
+                productElement.innerHTML = `
+                    ${product.name}<br>
+                    ₱${product.price.toFixed(2)}
+                `;
+                productElement.addEventListener('click', () => addToCart(product));
+                productGrid.appendChild(productElement);
+            });
+        }
+
+        // Filter by category
+        function filterByCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent === category);
+            });
+            displayProducts();
+        }
+
+        // Add to cart function
+        function addToCart(product) {
+            const existingItem = cart.find(item => item.id === product.id);
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            updateCart();
+        }
+
+        // Update cart display
+        function updateCart() {
+            const cartItems = document.getElementById('cartItems');
+            cartItems.innerHTML = '';
+            
+            cart.forEach(item => {
+                const cartItemElement = document.createElement('div');
+                cartItemElement.className = 'cart-item';
+                cartItemElement.innerHTML = `
+                    <span>${item.name} x${item.quantity}</span>
+                    <div class="cart-item-controls">
+                        <button onclick="decreaseQuantity(${item.id})">-</button>
+                        <span>₱${(item.price * item.quantity).toFixed(2)}</span>
+                        <button onclick="increaseQuantity(${item.id})">+</button>
+                    </div>
+                `;
+                cartItems.appendChild(cartItemElement);
+            });
+            
+            // Update total
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('cartTotal').textContent = `Total: ₱${total.toFixed(2)}`;
+        }
+
+        // Quantity controls
+        window.increaseQuantity = function(id) {
+            const item = cart.find(item => item.id === id);
+            if (item) {
+                item.quantity += 1;
+                updateCart();
+            }
+        };
+
+        window.decreaseQuantity = function(id) {
+            const itemIndex = cart.findIndex(item => item.id === id);
+            if (itemIndex !== -1) {
+                if (cart[itemIndex].quantity > 1) {
+                    cart[itemIndex].quantity -= 1;
+                } else {
+                    cart.splice(itemIndex, 1);
+                }
+                updateCart();
+            }
+        };
+
+        // Checkout button - Opens payment modal
+        document.getElementById('checkoutBtn').addEventListener('click', () => {
+            if (cart.length === 0) {
+                alert('Cart is empty!');
+                return;
+            }
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            document.getElementById('modalTotal').textContent = `₱${total.toFixed(2)}`;
+            document.getElementById('paymentModal').style.display = 'block';
+            document.getElementById('amountPaid').focus();
+        });
+
+        // Calculate change when amount is entered
+        document.getElementById('amountPaid').addEventListener('input', (e) => {
+            const amountPaid = parseFloat(e.target.value) || 0;
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const change = amountPaid - total;
+            
+            const changeDisplay = document.getElementById('changeDisplay');
+            const changeAmount = document.getElementById('changeAmount');
+            
+            if (amountPaid >= total && amountPaid > 0) {
+                changeDisplay.style.display = 'block';
+                changeAmount.textContent = change.toFixed(2);
+                changeDisplay.style.background = '#2ecc71';
+            } else if (amountPaid > 0) {
+                changeDisplay.style.display = 'block';
+                changeAmount.textContent = Math.abs(change).toFixed(2);
+                changeDisplay.innerHTML = `Insufficient: ₱${Math.abs(change).toFixed(2)} needed`;
+                changeDisplay.style.background = '#e74c3c';
+            } else {
+                changeDisplay.style.display = 'none';
+            }
+        });
+
+        // ... (all your existing product and cart code remains the same) ...
+
+// Save sales records to local storage
+function saveSalesRecords() {
+    localStorage.setItem('salesRecords', JSON.stringify(salesRecords));
+}
+
+// Load sales records from local storage
+function loadSalesRecords() {
+    const savedRecords = localStorage.getItem('salesRecords');
+    if (savedRecords) {
+        salesRecords = JSON.parse(savedRecords);
+    }
+}
+
+// ... (all your existing functions remain the same until the confirmPayment section) ...
+
+// Confirm payment
+document.getElementById('confirmPayment').addEventListener('click', () => {
+    const amountPaid = parseFloat(document.getElementById('amountPaid').value) || 0;
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    
+    if (amountPaid < total) {
+        alert('Insufficient payment amount!');
+        return;
+    }
+    
+    const change = amountPaid - total;
+    const saleRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleString(),
+        items: [...cart],
+        total: total,
+        amountPaid: amountPaid,
+        change: change
+    };
+    
+    // Save to records
+    salesRecords.push(saleRecord);
+    saveSalesRecords(); // Save to local storage
+    
+    // Show change alert
+    if (change > 0) {
+        alert(`Sale completed!\nChange: ₱${change.toFixed(2)}`);
+    } else {
+        alert('Sale completed! (Exact amount)');
+    }
+    
+    // Clear cart and close modal
+    cart = [];
+    updateCart();
+    closePaymentModal();
+});
+
+// Clear Records button
+document.getElementById('clearRecords').addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear all sales records?')) {
+        salesRecords = [];
+        localStorage.removeItem('salesRecords'); // Clear from local storage
+        displaySalesRecords();
+    }
+});
+
+// Initialize
+loadSalesRecords(); // Load saved records when page loads
+displayProducts();
+        // Cancel payment
+        document.getElementById('cancelPayment').addEventListener('click', closePaymentModal);
+
+        function closePaymentModal() {
+            document.getElementById('paymentModal').style.display = 'none';
+            document.getElementById('amountPaid').value = '';
+            document.getElementById('changeDisplay').style.display = 'none';
+        }
+
+        // View Records button
+        document.getElementById('viewRecordsBtn').addEventListener('click', () => {
+            displaySalesRecords();
+            document.getElementById('recordsModal').style.display = 'block';
+        });
+
+        // Close Records button
+        document.getElementById('closeRecords').addEventListener('click', () => {
+            document.getElementById('recordsModal').style.display = 'none';
+        });
+
+        // Clear Records button
+        document.getElementById('clearRecords').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all sales records?')) {
+                salesRecords = [];
+                displaySalesRecords();
+            }
+        });
+
+        // Export json file 
+    document.getElementById('exportRecords').addEventListener('click', () => {
+    const dataStr = localStorage.getItem('salesRecords') || '[]';
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    
+    const exportFileDefaultName = `sarisari-sales-${new Date().toISOString().slice(0,10)}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+});
+
+        // Display sales records
+        function displaySalesRecords() {
+            const recordsList = document.getElementById('salesRecordsList');
+            const totalSales = document.getElementById('totalSales');
+            
+            recordsList.innerHTML = '';
+            
+            if (salesRecords.length === 0) {
+                recordsList.innerHTML = '<p style="text-align: center; color: #666;">No sales records found.</p>';
+                totalSales.textContent = 'Total Sales: ₱0.00';
+                return;
+            }
+            
+            let grandTotal = 0;
+            
+            salesRecords.reverse().forEach(record => {
+                grandTotal += record.total;
+                
+                const recordDiv = document.createElement('div');
+                recordDiv.className = 'record-item';
+                recordDiv.innerHTML = `
+                    <div class="record-header">
+                        <strong>Sale #${record.id.toString().slice(-6)}</strong>
+                        <span>${record.date}</span>
+                    </div>
+                    <div class="record-details">
+                        <div><strong>Items:</strong></div>
+                        ${record.items.map(item => `<div style="margin-left: 15px;">• ${item.name} x${item.quantity} = ₱${(item.price * item.quantity).toFixed(2)}</div>`).join('')}
+                        <div style="margin-top: 10px;">
+                            <strong>Total: ₱${record.total.toFixed(2)}</strong> | 
+                            <strong>Paid: ₱${record.amountPaid.toFixed(2)}</strong> | 
+                            <strong>Change: ₱${record.change.toFixed(2)}</strong>
+                        </div>
+                    </div>
+                `;
+                recordsList.appendChild(recordDiv);
+            });
+            
+            salesRecords.reverse(); // Restore original order
+            totalSales.textContent = `Total Sales: ₱${grandTotal.toFixed(2)} (${salesRecords.length} transactions)`;
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+                if (e.target.id === 'paymentModal') {
+                    closePaymentModal();
+                }
+            }
+        });
+
+        // Print receipt
+        document.getElementById('printBtn').addEventListener('click', () => {
+            if (cart.length === 0) {
+                alert('Cart is empty!');
+                return;
+            }
+            
+            const receiptContent = document.getElementById('receiptContent');
+            const receiptTotal = document.getElementById('receiptTotal');
+            const receiptDate = document.getElementById('receiptDate');
+            const receipt = document.getElementById('receipt');
+            
+            receiptContent.innerHTML = '';
+            cart.forEach(item => {
+                receiptContent.innerHTML += `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <div>${item.name} x${item.quantity}</div>
+                        <div>₱${(item.price * item.quantity).toFixed(2)}</div>
+                    </div>
+                `;
+            });
+            
+            const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            receiptTotal.textContent = `Total: ₱${total.toFixed(2)}`;
+            receiptDate.textContent = new Date().toLocaleString();
+            
+            receipt.style.display = 'block';
+            window.print();
+            receipt.style.display = 'none';
+        });
+
+        // Clear cart
+        document.getElementById('clearCartBtn').addEventListener('click', () => {
+            cart = [];
+            updateCart();
+        });
+
+        // Initialize
+        displayProducts();
+    </script>
+</body>
+</html>

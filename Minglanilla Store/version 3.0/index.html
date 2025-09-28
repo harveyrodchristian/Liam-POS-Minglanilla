@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minglanilla Liam Store - POS System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-store"></i>
+                <span>Minglanilla Liam Store</span>
+            </div>
+            <div class="header-actions">
+                <div class="time-display" id="currentTime"></div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-title">Total Income</div>
+                <div class="stat-value stat-income" id="totalIncome">₱0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Total Revenue</div>
+                <div class="stat-value stat-revenue" id="totalRevenue">₱0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-title">Total Products</div>
+                <div class="stat-value stat-stock" id="totalProducts">0</div>
+            </div>
+        </div>
+
+        <div class="pos-container">
+            <div class="products-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-box"></i>
+                        Products
+                    </h2>
+                    <button class="btn btn-primary" id="addProductBtn">
+                        <i class="fas fa-plus"></i>
+                        Add Product
+                    </button>
+                </div>
+
+                <div class="search-container">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Search products...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+
+                <div class="category-tabs" id="categoryTabs"></div>
+
+                <div class="products-grid" id="productsGrid"></div>
+            </div>
+
+            <div class="cart-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-shopping-cart"></i>
+                        Cart
+                        <span id="cartCount" class="badge">0</span>
+                    </h2>
+                </div>
+
+                <div class="cart-items" id="cartItems">
+                    <div class="empty-cart">
+                        <i class="fas fa-shopping-cart" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                        <p>Your cart is empty</p>
+                        <p>Add products to get started</p>
+                    </div>
+                </div>
+
+                <div class="cart-summary">
+                    <div class="cart-total">
+                        <span>Total:</span>
+                        <span id="cartTotal">₱0.00</span>
+                    </div>
+                    <p style="text-align: center; color: var(--secondary); font-size: 0.875rem;" id="itemCount">0 items</p>
+                </div>
+
+                <div class="cart-actions">
+                    <button class="btn btn-success btn-full" id="checkoutBtn" disabled>
+                        <i class="fas fa-credit-card"></i>
+                        Checkout
+                    </button>
+                    <button class="btn btn-secondary" id="printBtn" disabled>
+                        <i class="fas fa-print"></i>
+                        Print
+                    </button>
+                    <button class="btn btn-danger" id="clearCartBtn" disabled>
+                        <i class="fas fa-trash"></i>
+                        Clear
+                    </button>
+                    <button class="btn btn-primary" id="viewRecordsBtn">
+                        <i class="fas fa-chart-line"></i>
+                        Records
+                    </button>
+                    <button class="btn btn-secondary" id="exportRecords">
+                        <i class="fas fa-download"></i>
+                        Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Process Payment</h3>
+                <button class="close-btn" id="closePaymentModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="payment-summary">
+                <div class="payment-row">
+                    <span>Subtotal:</span>
+                    <span id="modalSubtotal">₱0.00</span>
+                </div>
+                <div class="payment-row">
+                    <span><strong>Total:</strong></span>
+                    <span id="modalTotal"><strong>₱0.00</strong></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="amountPaid">Amount Paid</label>
+                <input type="number" class="form-input" id="amountPaid" placeholder="0.00" step="0.01" min="0">
+            </div>
+
+            <div id="changeDisplay" class="change-display" style="display: none;">
+                Change: ₱<span id="changeAmount">0.00</span>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelPayment">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="btn btn-success" id="confirmPayment" disabled>
+                    <i class="fas fa-check"></i>
+                    Complete Sale
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sales Records Modal -->
+    <div id="recordsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-chart-line"></i>
+                    Sales Records
+                </h3>
+                <button class="close-btn" id="closeRecordsModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; align-items: center;">
+                <button class="btn btn-danger" id="clearRecords">
+                    <i class="fas fa-trash"></i>
+                    Clear All
+                </button>
+                <button class="btn btn-primary" id="importRecords">
+                    <i class="fas fa-upload"></i>
+                    Import
+                </button>
+                <div id="totalSales" style="margin-left: auto; font-weight: 600; color: var(--success);"></div>
+            </div>
+
+            <div id="salesRecordsList" style="max-height: 500px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-plus"></i>
+                    Add New Product
+                </h3>
+                <button class="close-btn" id="closeAddProductModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="productDetails">Product Details</button>
+                <button class="tab-button" data-tab="priceInfo">Price Information</button>
+            </div>
+
+            <div class="tab-content active" id="productDetails">
+                <div class="form-group">
+                    <label class="form-label" for="productName">Product Name</label>
+                    <input type="text" class="form-input" id="productName" placeholder="Enter product name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="productCategory">Category</label>
+                    <input type="text" class="form-input" id="productCategory" placeholder="Enter category">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="productStock">Initial Stock</label>
+                    <input type="number" class="form-input" id="productStock" placeholder="Enter initial stock" min="0" value="0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="lowStockThreshold">Low Stock Threshold</label>
+                    <input type="number" class="form-input" id="lowStockThreshold" placeholder="Enter threshold" min="0" value="5">
+                </div>
+            </div>
+
+            <div class="tab-content" id="priceInfo">
+                <div class="form-group">
+                    <label class="form-label" for="originalPrice">Original Price (Cost)</label>
+                    <input type="number" class="form-input" id="originalPrice" placeholder="0.00" step="0.01" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="sellingPrice">Selling Price</label>
+                    <input type="number" class="form-input" id="sellingPrice" placeholder="0.00" step="0.01" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="profitPerUnit">Profit per Unit</label>
+                    <input type="number" class="form-input" id="profitPerUnit" placeholder="0.00" step="0.01" readonly>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" id="cancelAddProduct">
+                    <i class="fas fa-times"></i>
+                    Cancel
+                </button>
+                <button class="btn btn-success" id="saveProduct">
+                    <i class="fas fa-save"></i>
+                    Save Product
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Template -->
+    <div class="receipt" id="receipt">
+        <div class="receipt-header">
+            <h2>MINGLANILLA LIAM STORE</h2>
+            <p>123 Main Street, Barangay 1</p>
+            <p>Tel: 0912-345-6789</p>
+            <div id="receiptDate"></div>
+        </div>
+        <div id="receiptContent"></div>
+        <div class="receipt-total" id="receiptTotal"></div>
+        <div style="text-align: center; margin-top: 1rem;">
+            <p>Thank you for shopping!</p>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

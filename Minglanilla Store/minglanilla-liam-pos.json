@@ -1,0 +1,13 @@
+{
+  "name": "minglanilla-liam-pos",
+  "version": "1.0.0",
+  "main": "index.html",
+  "window": {
+    "title": "Minglanilla Liam Store POS",
+    "icon": "icon.png",
+    "width": 1200,
+    "height": 800,
+    "min_width": 800,
+    "min_height": 600
+  }
+}
